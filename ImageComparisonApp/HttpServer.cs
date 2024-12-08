@@ -53,14 +53,20 @@ public class HttpServer
                 byte[] uploadedImageData = request.Body;
 
                 Stopwatch stopwatch = Stopwatch.StartNew();
-                double[,] similarityMatrix = isMultiThread
-                    ? imageProcessor.ProcessImageMultiThread(uploadedImageData)
-                    : imageProcessor.ProcessImageSingleThread(uploadedImageData);
-                stopwatch.Stop();
 
+                (double[,] similarityMatrix, double totalScore) = imageProcessor.ProcessImage(uploadedImageData, isMultiThread);
+
+                stopwatch.Stop();
                 long processingTime = stopwatch.ElapsedMilliseconds;
 
-                var response = HttpResponse.CreateComparisonMatrixResponse(similarityMatrix, processingTime, referenceImageData, uploadedImageData);
+                var response = HttpResponse.CreateComparisonMatrixResponse(
+                    similarityMatrix,
+                    totalScore,
+                    processingTime,
+                    referenceImageData,
+                    uploadedImageData
+                );
+
                 response.Send(clientSocket);
             }
             else

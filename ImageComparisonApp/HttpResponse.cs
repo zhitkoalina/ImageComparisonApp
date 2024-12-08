@@ -69,7 +69,7 @@ public class HttpResponse
     }
 
     public static HttpResponse CreateComparisonMatrixResponse(
-    double[,] matrix, long processingTime, byte[] referenceImageData, byte[] uploadedImageData)
+    double[,] matrix, double totalScore, long processingTime, byte[] referenceImageData, byte[] uploadedImageData)
     {
         string htmlTemplate = ReadHtmlFile(@"..\\..\\..\\html\\response.html");
 
@@ -80,6 +80,7 @@ public class HttpResponse
 
         string htmlContent = htmlTemplate
             .Replace("{{matrix}}", matrixHtml)
+            .Replace("{{totalScore}}", totalScore.ToString())
             .Replace("{{time}}", processingTime.ToString())
             .Replace("{{referenceImage}}", $"data:image/png;base64,{referenceImageBase64}")
             .Replace("{{uploadedImage}}", $"data:image/png;base64,{uploadedImageBase64}");
