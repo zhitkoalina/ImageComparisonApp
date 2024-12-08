@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Image for Comparison</title>
+    <title>Загрузите изображение для сравнения</title>
 
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -48,12 +48,12 @@
     <div class="container">
         <div class="form-container">
             <h2>Загрузите изображение для сравнения</h2>
-            <form id="uploadForm" action="/singlethread" method="POST" enctype="multipart/form-data">
+            <form id="uploadForm" action="/multithread" method="POST" enctype="multipart/form-data">
                 <div class="form-group">
                     <label for="image">Выберите изображение:</label>
                     <input type="file" id="image" name="image" accept="image/*" required>
                     <label>
-                        <input type="checkbox" id="modeToggle" onchange="toggleMode(this)">
+                        <input type="checkbox" id="modeToggle" onchange="toggleMode(this)" checked>
                         Использовать многопоточность
                     </label>
                 </div>
