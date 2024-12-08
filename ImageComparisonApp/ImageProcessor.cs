@@ -13,21 +13,7 @@ public class ImageProcessor
 {
     public const string ReferenceImagePath = "D:\\!учеба\\7 семестр\\!!курсачРИС\\проект\\ImageComparisonApp\\ImageComparisonApp\\reference.jpg";
 
-    public (double[,] singleThreadMatrix, long singleThreadTime, double[,] multiThreadMatrix, long multiThreadTime) ProcessImage(byte[] imageData)
-    {
-        Stopwatch singleThreadStopwatch = Stopwatch.StartNew();
-        var singleThreadMatrix = ProcessImageSingleThread(imageData);
-        singleThreadStopwatch.Stop();
-
-        Stopwatch multiThreadStopwatch = Stopwatch.StartNew();
-        var multiThreadMatrix = ProcessImageMultiThread(imageData);
-        multiThreadStopwatch.Stop();
-
-        return (singleThreadMatrix, singleThreadStopwatch.ElapsedMilliseconds,
-                multiThreadMatrix, multiThreadStopwatch.ElapsedMilliseconds);
-    }
-
-    private double[,] ProcessImageSingleThread(byte[] imageData)
+    public double[,] ProcessImageSingleThread(byte[] imageData)
     {
         using var referenceImage = new Bitmap(ReferenceImagePath);
         using var uploadedImage = new Bitmap(new MemoryStream(imageData));
@@ -38,7 +24,7 @@ public class ImageProcessor
         return CompareHistograms(referenceHistograms, uploadedHistograms);
     }
 
-    private double[,] ProcessImageMultiThread(byte[] imageData)
+    public double[,] ProcessImageMultiThread(byte[] imageData)
     {
         using var referenceImage = new Bitmap(ReferenceImagePath);
         using var uploadedImage = new Bitmap(new MemoryStream(imageData));
@@ -168,22 +154,5 @@ public class ImageProcessor
             similarity += Math.Min(hist1[i], hist2[i]);
         }
         return similarity / hist1.Sum();
-    }
-
-    public static string FormatMatrixAsHtmlTable(double[,] matrix)
-    {
-        var sb = new StringBuilder();
-        sb.Append("<table border='1'>");
-        for (int i = 0; i < matrix.GetLength(0); i++)
-        {
-            sb.Append("<tr>");
-            for (int j = 0; j < matrix.GetLength(1); j++)
-            {
-                sb.AppendFormat("<td>{0:F2}</td>", matrix[i, j]);
-            }
-            sb.Append("</tr>");
-        }
-        sb.Append("</table>");
-        return sb.ToString();
     }
 }

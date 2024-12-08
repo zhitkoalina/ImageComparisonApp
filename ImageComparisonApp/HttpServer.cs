@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -43,20 +44,23 @@ public class HttpServer
                 var response = HttpResponse.CreateUploadFormResponse();
                 response.Send(clientSocket);
             }
-            else if (request.Method == "POST" && request.Path == "/compare")
+            else if (request.Method == "POST" && (request.Path == "/singlethread" || request.Path == "/multithread"))
             {
                 var imageProcessor = new ImageProcessor();
+                bool isMultiThread = request.Path == "/multithread";
 
                 byte[] referenceImageData = File.ReadAllBytes(ImageProcessor.ReferenceImagePath);
+                byte[] uploadedImageData = request.Body;
 
-                var (singleThreadMatrix, singleThreadTime, multiThreadMatrix, multiThreadTime) =
-                    imageProcessor.ProcessImage(request.Body);
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                double[,] similarityMatrix = isMultiThread
+                    ? imageProcessor.ProcessImageMultiThread(uploadedImageData)
+                    : imageProcessor.ProcessImageSingleThread(uploadedImageData);
+                stopwatch.Stop();
 
-                var response = HttpResponse.CreateComparisonMatrixResponse(
-                    singleThreadMatrix, singleThreadTime,
-                    multiThreadMatrix, multiThreadTime,
-                    referenceImageData, request.Body);
+                long processingTime = stopwatch.ElapsedMilliseconds;
 
+                var response = HttpResponse.CreateComparisonMatrixResponse(similarityMatrix, processingTime, referenceImageData, uploadedImageData);
                 response.Send(clientSocket);
             }
             else

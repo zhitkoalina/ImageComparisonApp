@@ -11,74 +11,6 @@ public class HttpResponse
 
     private HttpResponse() { }
 
-    private static string ReadHtmlFile(string filePath)
-    {
-        try
-        {
-            return File.ReadAllText(filePath);
-        }
-        catch (FileNotFoundException)
-        {
-            Console.WriteLine($"Error: File not found - {filePath}");
-            return "<html><body><h1>File Not Found</h1></body></html>";
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error reading file {filePath}: {ex.Message}");
-            return "<html><body><h1>Error Loading Page</h1></body></html>";
-        }
-    }
-
-    public static HttpResponse CreateTextResponse(string status, string content)
-    {
-        return new HttpResponse
-        {
-            StatusCode = status,
-            ContentType = "text/plain",
-            Body = Encoding.UTF8.GetBytes(content)
-        };
-    }
-
-    public static HttpResponse CreateHtmlResponse(string content)
-    {
-        return new HttpResponse
-        {
-            StatusCode = "200 OK",
-            ContentType = "text/html",
-            Body = Encoding.UTF8.GetBytes(content)
-        };
-    }
-
-    public static HttpResponse CreateComparisonMatrixResponse(
-        double[,] singleThreadMatrix, long singleThreadTime,
-        double[,] multiThreadMatrix, long multiThreadTime,
-        byte[] referenceImageData, byte[] uploadedImageData)
-    {
-        string htmlTemplate = ReadHtmlFile(@"..\\..\\..\\html\\response.html");
-
-        string singleMatrixHtml = ImageProcessor.FormatMatrixAsHtmlTable(singleThreadMatrix);
-        string multiMatrixHtml = ImageProcessor.FormatMatrixAsHtmlTable(multiThreadMatrix);
-
-        string referenceImageBase64 = Convert.ToBase64String(referenceImageData);
-        string uploadedImageBase64 = Convert.ToBase64String(uploadedImageData);
-
-        string htmlContent = htmlTemplate
-            .Replace("{{singleThreadMatrix}}", singleMatrixHtml)
-            .Replace("{{multiThreadMatrix}}", multiMatrixHtml)
-            .Replace("{{singleThreadTime}}", singleThreadTime.ToString())
-            .Replace("{{multiThreadTime}}", multiThreadTime.ToString())
-            .Replace("{{referenceImage}}", $"data:image/png;base64,{referenceImageBase64}")
-            .Replace("{{uploadedImage}}", $"data:image/png;base64,{uploadedImageBase64}");
-
-        return CreateHtmlResponse(htmlContent);
-    }
-
-    public static HttpResponse CreateUploadFormResponse()
-    {
-        string htmlContent = ReadHtmlFile(@"..\\..\\..\\html\\uploadForm.html");
-        return CreateHtmlResponse(htmlContent);
-    }
-
     public void Send(Socket clientSocket)
     {
         try
@@ -114,5 +46,85 @@ public class HttpResponse
                 clientSocket.Close();
             }
         }
+    }
+
+    public static HttpResponse CreateTextResponse(string status, string content)
+    {
+        return new HttpResponse
+        {
+            StatusCode = status,
+            ContentType = "text/plain",
+            Body = Encoding.UTF8.GetBytes(content)
+        };
+    }
+
+    public static HttpResponse CreateHtmlResponse(string content)
+    {
+        return new HttpResponse
+        {
+            StatusCode = "200 OK",
+            ContentType = "text/html",
+            Body = Encoding.UTF8.GetBytes(content)
+        };
+    }
+
+    public static HttpResponse CreateComparisonMatrixResponse(
+    double[,] matrix, long processingTime, byte[] referenceImageData, byte[] uploadedImageData)
+    {
+        string htmlTemplate = ReadHtmlFile(@"..\\..\\..\\html\\response.html");
+
+        string matrixHtml = FormatMatrixAsHtmlTable(matrix);
+
+        string referenceImageBase64 = Convert.ToBase64String(referenceImageData);
+        string uploadedImageBase64 = Convert.ToBase64String(uploadedImageData);
+
+        string htmlContent = htmlTemplate
+            .Replace("{{matrix}}", matrixHtml)
+            .Replace("{{time}}", processingTime.ToString())
+            .Replace("{{referenceImage}}", $"data:image/png;base64,{referenceImageBase64}")
+            .Replace("{{uploadedImage}}", $"data:image/png;base64,{uploadedImageBase64}");
+
+        return CreateHtmlResponse(htmlContent);
+    }
+
+    public static HttpResponse CreateUploadFormResponse()
+    {
+        string htmlContent = ReadHtmlFile(@"..\\..\\..\\html\\uploadForm.html");
+        return CreateHtmlResponse(htmlContent);
+    }
+
+    private static string ReadHtmlFile(string filePath)
+    {
+        try
+        {
+            return File.ReadAllText(filePath);
+        }
+        catch (FileNotFoundException)
+        {
+            Console.WriteLine($"Error: File not found - {filePath}");
+            return "<html><body><h1>File Not Found</h1></body></html>";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error reading file {filePath}: {ex.Message}");
+            return "<html><body><h1>Error Loading Page</h1></body></html>";
+        }
+    }
+
+    private static string FormatMatrixAsHtmlTable(double[,] matrix)
+    {
+        var sb = new StringBuilder();
+        sb.Append("<table border='1'>");
+        for (int i = 0; i < matrix.GetLength(0); i++)
+        {
+            sb.Append("<tr>");
+            for (int j = 0; j < matrix.GetLength(1); j++)
+            {
+                sb.AppendFormat("<td>{0:F2}</td>", matrix[i, j]);
+            }
+            sb.Append("</tr>");
+        }
+        sb.Append("</table>");
+        return sb.ToString();
     }
 }
