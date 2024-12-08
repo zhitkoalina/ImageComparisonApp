@@ -1,0 +1,96 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результаты сравнения изображений</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .image-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+            .image-container img {
+                max-width: 100%;
+                height: auto;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+
+        .image-wrapper {
+            flex: 1;
+            text-align: center;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f8f9fa;
+        }
+
+        .matrix-section {
+            margin-bottom: 30px;
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+        }
+
+        .btn-back {
+            display: block;
+            margin: 20px auto;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="container">
+    <h1>Результаты сравнения изображений</h1>
+
+    <div class="image-container">
+        <div class="image-wrapper">
+            <h2>Эталонное изображение</h2>
+            <img src="{{referenceImage}}" alt="Сравнительное изображение">
+        </div>
+        <div class="image-wrapper">
+            <h2>Загруженное изображение</h2>
+            <img src="{{uploadedImage}}" alt="Загруженное изображение">
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-center">
+        <div class="col-4">
+            <div class="matrix-section">
+                <h3>Однопоточная обработка</h3>
+                <p>Время обработки: {{singleThreadTime}} мс</p>
+                <div>{{singleThreadMatrix}}</div>
+            </div>
+
+            <div class="matrix-section">
+                <h3>Многопоточная обработка</h3>
+                <p>Время обработки: {{multiThreadTime}} мс</p>
+                <div>{{multiThreadMatrix}}</div>
+            </div>
+
+            <div class="text-center mt-2">
+                <a href="/" class="btn btn-secondary btn-back">Вернуться к форме</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

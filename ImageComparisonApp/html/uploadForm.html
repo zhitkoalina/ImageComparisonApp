@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Image for Comparison</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .container {
+            max-width: 600px;
+            padding-top: 30px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #007bff;
+            font-weight: bolder;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .btn-primary {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .form-container {
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h2>Загрузите изображение для сравнения</h2>
+            <form action="/compare" method="post" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="image">Выберите изображение:</label>
+                    <input type="file" name="image" accept="image/*" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary">Загрузить и сравнить</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
