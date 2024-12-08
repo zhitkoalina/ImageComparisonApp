@@ -139,20 +139,33 @@ public class ImageProcessor
 
     private double CompareSingleFragmentHistograms(int[][] hist1, int[][] hist2)
     {
-        double redSimilarity = CompareSingleChannelHistogram(hist1[0], hist2[0]);
-        double greenSimilarity = CompareSingleChannelHistogram(hist1[1], hist2[1]);
-        double blueSimilarity = CompareSingleChannelHistogram(hist1[2], hist2[2]);
+        double redDivergence = CompareSingleChannelHistogram(hist1[0], hist2[0]);
+        double greenDivergence = CompareSingleChannelHistogram(hist1[1], hist2[1]);
+        double blueDivergence = CompareSingleChannelHistogram(hist1[2], hist2[2]);
 
-        return (redSimilarity + greenSimilarity + blueSimilarity) / 3;
+        return (redDivergence + greenDivergence + blueDivergence) / 3;
     }
 
     private double CompareSingleChannelHistogram(int[] hist1, int[] hist2)
     {
-        double similarity = 0;
+        double sum1 = hist1.Sum();
+        double sum2 = hist2.Sum();
+        if (sum1 == 0 || sum2 == 0)
+            return double.MaxValue; // если одна из гистограмм пуста, возвращаем максимальное значение
+
+        // Вычисляем KL-дивергенцию
+        double klDivergence = 0;
         for (int i = 0; i < hist1.Length; i++)
         {
-            similarity += Math.Min(hist1[i], hist2[i]);
+            double p = hist1[i] / sum1;
+            double q = hist2[i] / sum2;
+
+            if (p > 0 && q > 0)
+            {
+                klDivergence += p * Math.Log(p / q);
+            }
         }
-        return similarity / hist1.Sum();
+
+        return klDivergence;
     }
 }
