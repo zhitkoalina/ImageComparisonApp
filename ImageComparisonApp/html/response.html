@@ -58,12 +58,12 @@
     </style>
 </head>
 <body class="container">
-    <h1>Результаты сравнения изображений</h1>
+    <h1>Результат сравнения изображений</h1>
 
     <div class="image-container">
         <div class="image-wrapper">
             <h2>Эталонное изображение</h2>
-            <img src="{{referenceImage}}" alt="Сравнительное изображение">
+            <img src="{{referenceImage}}" alt="Эталонное изображение">
         </div>
         <div class="image-wrapper">
             <h2>Загруженное изображение</h2>
@@ -72,17 +72,15 @@
     </div>
 
     <div class="d-flex justify-content-center">
-        <div class="col-4">
-            <div class="matrix-section">
-                <h3>Однопоточная обработка</h3>
-                <p>Время обработки: {{singleThreadTime}} мс</p>
-                <div>{{singleThreadMatrix}}</div>
-            </div>
+        <h3>Общий процент схожести изображений: <strong>{{totalScore}} %</strong></h3>
+    </div>
 
+    <div class="d-flex justify-content-center">
+        <div class="col-5">
             <div class="matrix-section">
-                <h3>Многопоточная обработка</h3>
-                <p>Время обработки: {{multiThreadTime}} мс</p>
-                <div>{{multiThreadMatrix}}</div>
+                <p>Матрица схожести:</p>
+                <div>{{matrix}}</div>
+                <p>Время обработки: {{time}} мс</p>
             </div>
 
             <div class="text-center mt-2">

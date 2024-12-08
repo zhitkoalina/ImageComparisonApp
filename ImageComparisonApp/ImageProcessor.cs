@@ -13,40 +13,32 @@ public class ImageProcessor
 {
     public const string ReferenceImagePath = "D:\\!учеба\\7 семестр\\!!курсачРИС\\проект\\ImageComparisonApp\\ImageComparisonApp\\reference.jpg";
 
-    public (double[,] singleThreadMatrix, long singleThreadTime, double[,] multiThreadMatrix, long multiThreadTime) ProcessImage(byte[] imageData)
-    {
-        Stopwatch singleThreadStopwatch = Stopwatch.StartNew();
-        var singleThreadMatrix = ProcessImageSingleThread(imageData);
-        singleThreadStopwatch.Stop();
-
-        Stopwatch multiThreadStopwatch = Stopwatch.StartNew();
-        var multiThreadMatrix = ProcessImageMultiThread(imageData);
-        multiThreadStopwatch.Stop();
-
-        return (singleThreadMatrix, singleThreadStopwatch.ElapsedMilliseconds,
-                multiThreadMatrix, multiThreadStopwatch.ElapsedMilliseconds);
-    }
-
-    private double[,] ProcessImageSingleThread(byte[] imageData)
+    public (double[,], double) ProcessImage(byte[] imageData, bool isMultithread)
     {
         using var referenceImage = new Bitmap(ReferenceImagePath);
         using var uploadedImage = new Bitmap(new MemoryStream(imageData));
 
-        var referenceHistograms = CalculateHistogramsSingleThread(referenceImage);
-        var uploadedHistograms = CalculateHistogramsSingleThread(uploadedImage);
+        double[,] similarityMatrix;
+        double totalScore;
 
-        return CompareHistograms(referenceHistograms, uploadedHistograms);
-    }
+        if (isMultithread)
+        {
+            var referenceHistograms = CalculateHistogramsMultiThread(referenceImage);
+            var uploadedHistograms = CalculateHistogramsMultiThread(uploadedImage);
 
-    private double[,] ProcessImageMultiThread(byte[] imageData)
-    {
-        using var referenceImage = new Bitmap(ReferenceImagePath);
-        using var uploadedImage = new Bitmap(new MemoryStream(imageData));
+            similarityMatrix = CompareHistograms(referenceHistograms, uploadedHistograms);
+            totalScore = CalculateTotalScore(similarityMatrix);
+        }
+        else
+        {
+            var referenceHistograms = CalculateHistogramsSingleThread(referenceImage);
+            var uploadedHistograms = CalculateHistogramsSingleThread(uploadedImage);
 
-        var referenceHistograms = CalculateHistogramsMultiThread(referenceImage);
-        var uploadedHistograms = CalculateHistogramsMultiThread(uploadedImage);
+            similarityMatrix = CompareHistograms(referenceHistograms, uploadedHistograms);
+            totalScore = CalculateTotalScore(similarityMatrix);
+        }
 
-        return CompareHistograms(referenceHistograms, uploadedHistograms);
+        return (similarityMatrix, totalScore);
     }
 
     private List<int[][]> CalculateHistogramsSingleThread(Bitmap image)
@@ -153,37 +145,59 @@ public class ImageProcessor
 
     private double CompareSingleFragmentHistograms(int[][] hist1, int[][] hist2)
     {
-        double redSimilarity = CompareSingleChannelHistogram(hist1[0], hist2[0]);
-        double greenSimilarity = CompareSingleChannelHistogram(hist1[1], hist2[1]);
-        double blueSimilarity = CompareSingleChannelHistogram(hist1[2], hist2[2]);
+        double redDivergence = CompareSingleChannelHistogram(hist1[0], hist2[0]);
+        double greenDivergence = CompareSingleChannelHistogram(hist1[1], hist2[1]);
+        double blueDivergence = CompareSingleChannelHistogram(hist1[2], hist2[2]);
 
-        return (redSimilarity + greenSimilarity + blueSimilarity) / 3;
+        return (redDivergence + greenDivergence + blueDivergence) / 3;
     }
 
     private double CompareSingleChannelHistogram(int[] hist1, int[] hist2)
     {
-        double similarity = 0;
+        double sum1 = hist1.Sum();
+        double sum2 = hist2.Sum();
+        if (sum1 == 0 || sum2 == 0)
+            return 0;
+
+        // KL-дивергенция
+        double klDivergence = 0;
         for (int i = 0; i < hist1.Length; i++)
         {
-            similarity += Math.Min(hist1[i], hist2[i]);
+            double p = hist1[i] / sum1;
+            double q = hist2[i] / sum2;
+
+            if (p > 0 && q > 0)
+            {
+                klDivergence += p * Math.Log(p / q);
+            }
         }
-        return similarity / hist1.Sum();
+
+        // Инверсия и нормализация
+        const double maxKlDivergence = 5.545; // ммм ну тут +-
+        double similarity = 1 - Math.Min(klDivergence / maxKlDivergence, 1.0);
+
+        return similarity;
     }
 
-    public static string FormatMatrixAsHtmlTable(double[,] matrix)
+
+    public double CalculateTotalScore(double[,] similarityMatrix)
     {
-        var sb = new StringBuilder();
-        sb.Append("<table border='1'>");
-        for (int i = 0; i < matrix.GetLength(0); i++)
+        double totalSimilarity = 0;
+        int rows = similarityMatrix.GetLength(0);
+        int cols = similarityMatrix.GetLength(1);
+
+        for (int row = 0; row < rows; row++)
         {
-            sb.Append("<tr>");
-            for (int j = 0; j < matrix.GetLength(1); j++)
+            for (int col = 0; col < cols; col++)
             {
-                sb.AppendFormat("<td>{0:F2}</td>", matrix[i, j]);
+                totalSimilarity += similarityMatrix[row, col];
             }
-            sb.Append("</tr>");
         }
-        sb.Append("</table>");
-        return sb.ToString();
+
+        double averageSimilarity = totalSimilarity / (rows * cols);
+
+        double finalScore = Math.Round(averageSimilarity * 100, 2);
+
+        return Math.Max(0, Math.Min(finalScore, 100));
     }
 }
