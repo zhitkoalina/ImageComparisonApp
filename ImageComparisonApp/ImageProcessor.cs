@@ -83,23 +83,33 @@ public class ImageProcessor
         int bytesPerPixel = Bitmap.GetPixelFormatSize(image.PixelFormat) / 8;
         int stride = bitmapData.Stride;
 
-        var threadPool = new CustomThreadPool(4); // 4 потока
-
-        for (int i = 0; i < 16; i++)
+        // Используем CountdownEvent для синхронизации завершения всех задач
+        using (var countdown = new CountdownEvent(16))
         {
-            int taskIndex = i;
-            threadPool.EnqueueTask(() =>
+            for (int i = 0; i < 16; i++)
             {
-                int row = taskIndex / 4;
-                int col = taskIndex % 4;
-                int xStart = col * fragmentWidth;
-                int yStart = row * fragmentHeight;
+                int taskIndex = i;
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    try
+                    {
+                        int row = taskIndex / 4;
+                        int col = taskIndex % 4;
+                        int xStart = col * fragmentWidth;
+                        int yStart = row * fragmentHeight;
 
-                histograms[taskIndex] = CalculateFragmentHistogram(bitmapData, xStart, yStart, fragmentWidth, fragmentHeight, stride, bytesPerPixel);
-            });
+                        histograms[taskIndex] = CalculateFragmentHistogram(
+                            bitmapData, xStart, yStart, fragmentWidth, fragmentHeight, stride, bytesPerPixel);
+                    }
+                    finally
+                    {
+                        countdown.Signal();
+                    }
+                });
+            }
+
+            countdown.Wait();
         }
-
-        threadPool.Shutdown();
 
         image.UnlockBits(bitmapData);
         return histograms.ToList();
