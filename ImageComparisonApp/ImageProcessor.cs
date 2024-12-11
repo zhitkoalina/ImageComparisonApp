@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 public class ImageProcessor
 {
-    public const string ReferenceImagePath = "D:\\!учеба\\7 семестр\\!!курсачРИС\\проект\\ImageComparisonApp\\ImageComparisonApp\\reference.jpg";
+    public const string ReferenceImagePath = @"D:..\\..\\..\\reference.jpg";
 
     public (double[,], double) ProcessImage(byte[] imageData, bool isMultithread)
     {
@@ -41,7 +41,7 @@ public class ImageProcessor
         return (similarityMatrix, totalScore);
     }
 
-    private List<int[][]> CalculateHistogramsSingleThread(Bitmap image)
+    public List<int[][]> CalculateHistogramsSingleThread(Bitmap image)
     {
         var histograms = new List<int[][]>();
         int fragmentWidth = image.Width / 4;
@@ -69,7 +69,7 @@ public class ImageProcessor
         return histograms;
     }
 
-    private List<int[][]> CalculateHistogramsMultiThread(Bitmap image)
+    public List<int[][]> CalculateHistogramsMultiThread(Bitmap image)
     {
         var histograms = new int[16][][];
         int fragmentWidth = image.Width / 4;
