@@ -23,8 +23,6 @@ public class HttpServer
         serverSocket.Listen(10);
         Console.WriteLine($"Server started on port {port}");
 
-        ThreadPool.SetMinThreads(10, 10);
-
         while (true)
         {
             Socket clientSocket = serverSocket.Accept();
