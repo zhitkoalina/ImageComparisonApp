@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
 
 namespace ImageProcessorClient
 {
@@ -16,60 +14,45 @@ namespace ImageProcessorClient
             @"D:..\..\..\reference-squares-8k.jpg"
         };
 
-        private const string ServerUrl = "http://localhost:8080";
-
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Starting client-side load tests...");
+            Console.WriteLine("Starting client-side histogram calculation tests...");
+
+            var imageProcessor = new ImageProcessor();
 
             foreach (var imagePath in TestImagePaths)
             {
                 Console.WriteLine($"\nTesting image: {Path.GetFileName(imagePath)}");
 
-                double singleThreadTime = await MeasureUploadTime(imagePath, "/singlethread");
-                double multiThreadTime = await MeasureUploadTime(imagePath, "/multithread");
+                using var testImage = new Bitmap(imagePath);
+
+                double singleThreadTime = RunHistogramTest(imageProcessor, testImage, isMultithread: false);
+                double multiThreadTime = RunHistogramTest(imageProcessor, testImage, isMultithread: true);
 
                 Console.WriteLine($"Single Thread Average Time: {singleThreadTime:F2} ms");
                 Console.WriteLine($"Multi-Thread Average Time: {multiThreadTime:F2} ms");
             }
+
+            Console.WriteLine("\nPress Enter to exit...");
+            Console.ReadLine();
         }
 
-        private static async Task<double> MeasureUploadTime(string imagePath, string endpoint)
+        private static double RunHistogramTest(ImageProcessor imageProcessor, Bitmap testImage, bool isMultithread)
         {
             double totalTime = 0;
 
             for (int i = 0; i < NumberOfTests; i++)
             {
-                using var httpClient = new HttpClient();
-                using var multipartFormContent = new MultipartFormDataContent();
+                var stopwatch = Stopwatch.StartNew();
 
-                try
-                {
-                    var fileStreamContent = new StreamContent(File.OpenRead(imagePath))
-                    {
-                        Headers = { ContentType = new MediaTypeHeaderValue("image/jpeg") }
-                    };
-                    multipartFormContent.Add(fileStreamContent, name: "image", fileName: Path.GetFileName(imagePath));
+                var histograms = isMultithread
+                    ? imageProcessor.CalculateHistogramsMultiThread(testImage)
+                    : imageProcessor.CalculateHistogramsSingleThread(testImage);
 
-                    var stopwatch = Stopwatch.StartNew();
+                stopwatch.Stop();
+                totalTime += stopwatch.Elapsed.TotalMilliseconds;
 
-                    using var response = await httpClient.PostAsync(ServerUrl + endpoint, multipartFormContent);
-                    stopwatch.Stop();
-
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        Console.WriteLine($"Error: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
-                        return double.MaxValue;
-                    }
-
-                    Console.WriteLine($"Response for {endpoint}: {await response.Content.ReadAsStringAsync()}");
-                    totalTime += stopwatch.Elapsed.TotalMilliseconds;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error during upload to {endpoint}: {ex.Message}");
-                    return double.MaxValue;
-                }
+                Console.WriteLine($"Test {i + 1} - {(isMultithread ? "Multi-Thread" : "Single-Thread")}: Histogram calculated.");
             }
 
             return totalTime / NumberOfTests;

@@ -5,23 +5,67 @@ using System.Text;
 
 public class HttpRequest
 {
-    public string Method { get; private set; }
-    public string Path { get; private set; }
-    public byte[] Body { get; private set; }
+    public string Method { get; private set; } = null!;
+    public string Path { get; private set; } = null!;
+    public byte[] Body { get; private set; } = null!;
+
+    public static string ReadRowHeader(NetworkStream stream) {
+        string requestLine = string.Empty;
+        string? line;
+        string delimiter = "\r\n\r\n";
+
+        using (StreamReader readera = new(stream, Encoding.UTF8, leaveOpen: true)) {
+            while ((line = readera.ReadLine()) != null) {
+                requestLine += line + "\r\n"; 
+                if (requestLine.EndsWith(delimiter)) {
+                    requestLine = requestLine.Substring(
+                        0, requestLine.Length - delimiter.Length); 
+                    break;
+                }
+            }
+        }
+
+        return requestLine;
+    }
+
+    public static List<string> ReadHeader(NetworkStream stream) {
+        string requestLine = ReadRowHeader(stream);
+
+        string[] first = requestLine.Split(' ');
+        List<string> result = new();
+
+        foreach (var item in first) {
+            result.AddRange(item.Split("\r\n"));
+        }
+
+        return result;
+    }
+
+    private static (int, string?) GetMetadata(List<string> requestLine) {
+        int contentLength = 0;
+        string? boundary = null;
+
+        int index = requestLine.IndexOf("multipart/form-data;");
+        if (index > 1) {
+          boundary = requestLine[index+1][9..];
+          Logger.Info($"Boundary found: {boundary}");
+        }
+        
+        index = requestLine.IndexOf("Content-Length:");
+        if (index > 1) {
+          contentLength = int.Parse(requestLine[index+1]);
+          Logger.Info($"Content-Length found: {contentLength}");
+        }
+
+        return (contentLength, boundary);
+    }
 
     public static HttpRequest Parse(Socket clientSocket)
     {
         Logger.Info("Starting to parse HTTP request.");
 
         using var networkStream = new NetworkStream(clientSocket);
-        using var reader = new StreamReader(networkStream, Encoding.UTF8, leaveOpen: true);
-
-        var requestLine = reader.ReadLine()?.Split(' ');
-        if (requestLine == null || requestLine.Length < 3)
-        {
-            Logger.Error("Invalid request line: request line is null or incomplete.");
-            throw new Exception("Invalid request line");
-        }
+        var requestLine = ReadHeader(networkStream);
 
         string method = requestLine[0];
         string path = requestLine[1];
@@ -33,31 +77,7 @@ public class HttpRequest
             return new HttpRequest { Method = method, Path = path, Body = Array.Empty<byte>() };
         }
 
-        string line;
-        int contentLength = 0;
-        string boundary = null;
-
-        while (!string.IsNullOrWhiteSpace(line = reader.ReadLine()))
-        {
-            if (line.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase))
-            {
-                if (int.TryParse(line.Substring(15).Trim(), out int parsedContentLength))
-                {
-                    contentLength = parsedContentLength;
-                    Logger.Info($"Content-Length found: {contentLength}");
-                }
-                else
-                {
-                    Logger.Error("Invalid Content-Length header.");
-                    throw new Exception("Invalid Content-Length header.");
-                }
-            }
-            else if (line.StartsWith("Content-Type: multipart/form-data; boundary=", StringComparison.OrdinalIgnoreCase))
-            {
-                boundary = "--" + line.Substring(line.IndexOf("boundary=") + 9).Trim();
-                Logger.Info($"Boundary found: {boundary}");
-            }
-        }
+        var (contentLength, boundary) = GetMetadata(requestLine);
 
         if (method != "POST" || contentLength <= 0 || boundary == null)
         {
